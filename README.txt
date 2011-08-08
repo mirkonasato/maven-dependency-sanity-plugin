@@ -7,8 +7,9 @@ of the same JARs/classes from being packaged into the classpath.
 Checks
 ------
 
- * Unique artifactId: prevents e.g. having in the classpath both
-   aspectj:aspectjrt:1.5.4 and org.aspectj:aspectjrt:1.6.11
+ * Unique class names: inspects all JARs and fails the build if two JARs
+   contain the same class. This should catch all cases where two versions
+   of the same library are inadvertently packaged into the classpath.
 
 Usage
 -----
@@ -33,11 +34,11 @@ Add to your pom.xml
     </plugins>
   </build>
 
-To Do
------
+Future
+------
 
- * Conflicts: e.g. log4j-over-slf4j cannot co-exist with log4j
  * Same version for related dependencies: avoid e.g.
    spring-context:2.5.6 and spring-aop:2.0.8; all
-   org.springframework:spring-* should have the same version 
+   org.springframework:spring-* should have the same version
+ * Configuration options
  * ...

@@ -15,6 +15,7 @@
 //
 package com.encodedknowledge.maven.dependency.sanity;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,21 +24,42 @@ import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 
-class UniqueArtifactIdRule implements Rule {
+class UniqueClassRule implements Rule {
 
-    private Map<String, Artifact> artifactById = new HashMap<String, Artifact>();
+    private Map<String, Artifact> artifactByClassName = new HashMap<String, Artifact>();
 
+    private final ArtifactInspector artifactInspector;
+
+    public UniqueClassRule() {
+        this(new ArtifactInspector());
+    }
+    
+    UniqueClassRule(ArtifactInspector artifactInspector) {
+        this.artifactInspector = artifactInspector;
+    }
+    
     public List<Violation> check(Set<Artifact> artifacts) {
         List<Violation> violations = new ArrayList<Violation>();
         for (Artifact artifact : artifacts) {
             if (!isCompileOrRuntimeJar(artifact)) {
                 continue;
             }
-            if (artifactById.containsKey(artifact.getArtifactId())) {
-                Artifact otherArtifact = artifactById.get(artifact.getArtifactId());
-                violations.add(new Violation("duplicate artifactId", otherArtifact, artifact));
+            List<String> classNames;
+            try {
+                classNames = artifactInspector.listClasses(artifact);
+            } catch (IOException ioException) {
+                throw new RuntimeException(ioException);
             }
-            artifactById.put(artifact.getArtifactId(), artifact);
+            for (String className : classNames) {
+                if (artifactByClassName.containsKey(className)) {
+                    Artifact otherArtifact = artifactByClassName.get(className);
+                    violations.add(new Violation("duplicate class " + className, otherArtifact, artifact));
+                    // the two artifacts are likely to have many more classes in common
+                    // but we're only interested in finding the conflict so we stop here
+                    break;
+                }
+                artifactByClassName.put(className, artifact);
+            }
         }
         return violations;
     }
