@@ -15,6 +15,8 @@
 //
 package com.encodedknowledge.maven.dependency.sanity;
 
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -30,6 +32,8 @@ import org.apache.maven.project.MavenProject;
  */
 public class CheckMojo extends AbstractMojo {
 
+    private static final String[] DEFAULT_SCOPES = new String[] { Artifact.SCOPE_COMPILE, Artifact.SCOPE_RUNTIME };
+    
     /**
      * @parameter expression="${project}"
      * @required
@@ -37,10 +41,17 @@ public class CheckMojo extends AbstractMojo {
      */
     private MavenProject project;
 
+    /**
+     * Dependency scopes to be included in the check; defaults to compile and runtime.
+     * 
+     * @parameter
+     */
+    private List<String> scopes = Arrays.asList(DEFAULT_SCOPES);
+
     private final Rule rule = new UniqueClassRule();
 
     public void execute() throws MojoFailureException {
-        Set<Artifact> artifacts = project.getArtifacts();
+        Set<Artifact> artifacts = filterArtifactsByScope();
         List<Violation> violations = rule.check(artifacts);
         if (!violations.isEmpty()) {
             for (Violation violation : violations) {
@@ -48,6 +59,16 @@ public class CheckMojo extends AbstractMojo {
             }
             throw new MojoFailureException("Dependency Sanity Check failed");
         }
+    }
+
+    private Set<Artifact> filterArtifactsByScope() {
+        Set<Artifact> includedArtifacts = new LinkedHashSet<Artifact>();
+        for (Artifact artifact : project.getArtifacts()) {
+            if (scopes.contains(artifact.getScope())) {
+                includedArtifacts.add(artifact);
+            }
+        }
+        return includedArtifacts;
     }
 
 }

@@ -41,9 +41,6 @@ class UniqueClassRule implements Rule {
     public List<Violation> check(Set<Artifact> artifacts) {
         List<Violation> violations = new ArrayList<Violation>();
         for (Artifact artifact : artifacts) {
-            if (!isCompileOrRuntimeJar(artifact)) {
-                continue;
-            }
             List<String> classNames;
             try {
                 classNames = artifactInspector.listClasses(artifact);
@@ -62,11 +59,6 @@ class UniqueClassRule implements Rule {
             }
         }
         return violations;
-    }
-
-    private boolean isCompileOrRuntimeJar(Artifact artifact) {
-        return "jar".equals(artifact.getType()) &&
-            (Artifact.SCOPE_COMPILE.equals(artifact.getScope()) || Artifact.SCOPE_RUNTIME.equals(artifact.getScope()));
     }
 
 }
