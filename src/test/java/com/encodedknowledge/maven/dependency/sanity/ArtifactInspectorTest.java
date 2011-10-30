@@ -32,8 +32,7 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class ArtifactInspectorTest {
 
-    @Mock
-    private Artifact artifact;
+    @Mock private Artifact artifact;
 
     @Test
     public void listClasses() throws IOException {

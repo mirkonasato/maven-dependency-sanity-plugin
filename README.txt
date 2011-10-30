@@ -14,7 +14,7 @@ Checks
 Usage
 -----
 
-Add to your pom.xml
+Add to your pom.xml:
 
   <build>
     <plugins>
@@ -34,11 +34,41 @@ Add to your pom.xml
     </plugins>
   </build>
 
+or with configuration options:
+
+      <plugin>
+        <groupId>com.encodedknowledge.maven</groupId>
+        <artifactId>maven-dependency-sanity-plugin</artifactId>
+        <version>0.1</version>
+        <configuration>
+          <warnOnly>true</warnOnly>
+          <scopes>
+            <scope>compile</scope>
+            <scope>test</scope>
+          </scopes>
+          <exclusions>
+            <exclusion>
+              <artifacts>
+                <artifact>foo:foo:2.1</artifact>
+                <artifact>bar:bar:1.0</artifact>
+              </artifacts>
+            </exclusion>
+          </exclusions>
+        </configuration>
+        <executions>
+          <execution>
+            <goals>
+              <goal>check</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+
 Future
 ------
 
  * Same version for related dependencies: avoid e.g.
    spring-context:2.5.6 and spring-aop:2.0.8; all
    org.springframework:spring-* should have the same version
- * Configuration options
  * ...

@@ -33,11 +33,11 @@ class UniqueClassRule implements Rule {
     public UniqueClassRule() {
         this(new ArtifactInspector());
     }
-    
+
     UniqueClassRule(ArtifactInspector artifactInspector) {
         this.artifactInspector = artifactInspector;
     }
-    
+
     public List<Violation> check(Set<Artifact> artifacts) {
         List<Violation> violations = new ArrayList<Violation>();
         for (Artifact artifact : artifacts) {
@@ -50,7 +50,7 @@ class UniqueClassRule implements Rule {
             for (String className : classNames) {
                 if (artifactByClassName.containsKey(className)) {
                     Artifact otherArtifact = artifactByClassName.get(className);
-                    violations.add(new Violation("duplicate class " + className, otherArtifact, artifact));
+                    violations.add(new Violation("class duplication", "both provide " + className, otherArtifact, artifact));
                     // the two artifacts are likely to have many more classes in common
                     // but we're only interested in finding the conflict so we stop here
                     break;

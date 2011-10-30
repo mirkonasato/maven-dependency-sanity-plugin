@@ -15,8 +15,10 @@
 //
 package com.encodedknowledge.maven.dependency.sanity;
 
+import static com.encodedknowledge.maven.dependency.sanity.ArtifactTestUtils.createArtifact;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.when;
 
 import java.io.IOException;
@@ -26,8 +28,6 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
-import org.apache.maven.artifact.DefaultArtifact;
-import org.apache.maven.artifact.versioning.VersionRange;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,22 +37,21 @@ import org.mockito.runners.MockitoJUnitRunner;
 @RunWith(MockitoJUnitRunner.class)
 public class UniqueClassRuleTest {
 
-    @Mock
-    private ArtifactInspector artifactInspector;
-
     private UniqueClassRule rule;
 
+    @Mock private ArtifactInspector artifactInspector;
+
     @Before
-    public void setUp() {
+    public void setUp() throws IllegalAccessException {
         rule = new UniqueClassRule(artifactInspector);
     }
 
     @Test
-    public void noDuplicateClasses() throws IOException {
+    public void noDuplicatesFound() throws IOException {
         Set<Artifact> artifacts = new LinkedHashSet<Artifact>();
-        Artifact firstArtifact = makeArtifact("com.example", "foo", "1.1");
-        Artifact secondArtifact = makeArtifact("com.example", "bar", "1.3");
+        Artifact firstArtifact = createArtifact("com.example:foo:1.1");
         artifacts.add(firstArtifact);
+        Artifact secondArtifact = createArtifact("com.example:bar:1.3");
         artifacts.add(secondArtifact);
         
         when(artifactInspector.listClasses(firstArtifact)).thenReturn(Arrays.asList(
@@ -66,13 +65,16 @@ public class UniqueClassRuleTest {
         ));
         
         List<Violation> violations = rule.check(artifacts);
-        assertThat(violations.size(), is(0));
+        assertTrue(violations.isEmpty());
     }
 
     @Test
-    public void duplicateClasses() throws IOException {
-        Artifact firstArtifact = makeArtifact("example", "foo", "1.1");
-        Artifact secondArtifact = makeArtifact("com.example", "foo", "1.3");
+    public void duplicatesFound() throws IOException {
+        Set<Artifact> artifacts = new LinkedHashSet<Artifact>();
+        Artifact firstArtifact = createArtifact("example:foo:1.1");
+        artifacts.add(firstArtifact);
+        Artifact secondArtifact = createArtifact("com.example:foo:1.3");
+        artifacts.add(secondArtifact);
         
         when(artifactInspector.listClasses(firstArtifact)).thenReturn(Arrays.asList(
             "com.example.foo.FirstClass",
@@ -84,22 +86,10 @@ public class UniqueClassRuleTest {
             "com.example.foo.ThirdClass"
         ));
 
-        Set<Artifact> artifacts = new LinkedHashSet<Artifact>();
-        artifacts.add(firstArtifact);
-        artifacts.add(secondArtifact);
-
         List<Violation> violations = rule.check(artifacts);
         assertThat(violations.size(), is(1));
         assertThat(violations.get(0).toString(),
-                is("duplicate class com.example.foo.FirstClass: example:foo:1.1, com.example:foo:1.3"));
-    }
-
-    private Artifact makeArtifact(String groupId, String artifactId, String version) {
-        return makeArtifact(groupId, artifactId, version, Artifact.SCOPE_COMPILE);
-    }
-
-    private Artifact makeArtifact(String groupId, String artifactId, String version, String scope) {
-        return new DefaultArtifact(groupId, artifactId, VersionRange.createFromVersion(version), scope, "jar", "", null);
+                is("class duplication: [example:foo:1.1, com.example:foo:1.3] both provide com.example.foo.FirstClass"));
     }
 
 }

@@ -16,7 +16,6 @@
 package com.encodedknowledge.maven.dependency.sanity;
 
 import java.util.Arrays;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -32,8 +31,8 @@ import org.apache.maven.project.MavenProject;
  */
 public class CheckMojo extends AbstractMojo {
 
-    private static final String[] DEFAULT_SCOPES = new String[] { Artifact.SCOPE_COMPILE, Artifact.SCOPE_RUNTIME };
-    
+    public static final List<String> DEFAULT_SCOPES = Arrays.asList(Artifact.SCOPE_COMPILE, Artifact.SCOPE_RUNTIME);
+
     /**
      * @parameter expression="${project}"
      * @required
@@ -46,29 +45,46 @@ public class CheckMojo extends AbstractMojo {
      * 
      * @parameter
      */
-    private List<String> scopes = Arrays.asList(DEFAULT_SCOPES);
+    private List<String> scopes = DEFAULT_SCOPES;
 
-    private final Rule rule = new UniqueClassRule();
+    /**
+     * @parameter
+     */
+    private List<Exclusion> exclusions;
 
-    public void execute() throws MojoFailureException {
-        Set<Artifact> artifacts = filterArtifactsByScope();
-        List<Violation> violations = rule.check(artifacts);
-        if (!violations.isEmpty()) {
-            for (Violation violation : violations) {
-                getLog().error(violation.toString());
-            }
-            throw new MojoFailureException("Dependency Sanity Check failed");
-        }
+    /**
+     * @parameter default-value="false"
+     */
+    private boolean warnOnly;
+
+    private final Rule rule;
+    private final ArtifactScopeFilter artifactScopeFilter;
+    private final ViolationExclusionFilter violationExclusionFilter;
+
+    public CheckMojo() {
+        this(new UniqueClassRule(), new ArtifactScopeFilter(), new ViolationExclusionFilter());
     }
 
-    private Set<Artifact> filterArtifactsByScope() {
-        Set<Artifact> includedArtifacts = new LinkedHashSet<Artifact>();
-        for (Artifact artifact : project.getArtifacts()) {
-            if (scopes.contains(artifact.getScope())) {
-                includedArtifacts.add(artifact);
+    CheckMojo(Rule rule, ArtifactScopeFilter artifactScopeFilter, ViolationExclusionFilter violationExclusionFilter) {
+        this.rule = rule;
+        this.artifactScopeFilter = artifactScopeFilter;
+        this.violationExclusionFilter = violationExclusionFilter;
+    }
+
+    public void execute() throws MojoFailureException {
+        Set<Artifact> artifacts = artifactScopeFilter.filter(project.getArtifacts(), scopes);
+        List<Violation> violations = rule.check(artifacts);
+        if (exclusions != null && violations.size() > 0) {
+            violationExclusionFilter.filter(violations, exclusions);
+        }
+        if (violations.size() > 0) {
+            for (Violation violation : violations) {
+                getLog().warn(violation.toString());
+            }
+            if (!warnOnly) {
+                throw new MojoFailureException("dependency sanity check failed");
             }
         }
-        return includedArtifacts;
     }
 
 }

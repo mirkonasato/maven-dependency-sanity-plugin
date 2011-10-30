@@ -16,35 +16,43 @@
 package com.encodedknowledge.maven.dependency.sanity;
 
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.artifact.Artifact;
 
 class Violation {
 
-    private final String description;
-    private final List<Artifact> offendingArtifacts;
+    private final String name;
+    private final String details;
+    private final Set<ArtifactHeader> offendingArtifacts;
 
-    public Violation(String description, Artifact... offendingArtifacts) {
-        this(description, Arrays.asList(offendingArtifacts));
+    public Violation(String name, String details, Artifact... offendingArtifacts) {
+        this(name, details, Arrays.asList(offendingArtifacts));
     }
 
-    public Violation(String description, List<Artifact> offendingArtifacts) {
-        this.description = description;
-        this.offendingArtifacts = offendingArtifacts;
+    public Violation(String name, String details, List<Artifact> offendingArtifacts) {
+        this.name = name;
+        this.details = details;
+        this.offendingArtifacts = toArtifactHeaders(offendingArtifacts);
+    }
+
+    public Set<ArtifactHeader> getOffendingArtifacts() {
+        return offendingArtifacts;
+    }
+
+    private Set<ArtifactHeader> toArtifactHeaders(List<Artifact> artifacts) {
+        Set<ArtifactHeader> headers = new LinkedHashSet<ArtifactHeader>();
+        for (Artifact artifact : artifacts) {
+            headers.add(new ArtifactHeader(artifact));
+        }
+        return headers;
     }
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder(description + ": ");
-        for (int i = 0; i < offendingArtifacts.size(); i++) {
-            if (i > 0) {
-                builder.append(", ");
-            }
-            Artifact artifact = offendingArtifacts.get(i);
-            builder.append(artifact.getGroupId() + ":" + artifact.getArtifactId() + ":" + artifact.getVersion());
-        }
-        return builder.toString();
+        return name + ": " + offendingArtifacts + " " + details;
     }
 
 }
