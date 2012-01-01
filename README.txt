@@ -4,6 +4,11 @@ Maven Dependency Sanity Plugin
 Performs additional checks on Maven dependencies, to prevent multiple versions
 of the same JARs/classes from being packaged into the classpath.
 
+NOTE: when I wrote this plugin I wasn't aware that something very similar is
+already available from Codehaus and in the central Maven repository: 
+ 
+  http://mojo.codehaus.org/extra-enforcer-rules/banDuplicateClasses.html
+
 Checks
 ------
 
@@ -22,7 +27,7 @@ Add to your pom.xml:
       <plugin>
         <groupId>com.encodedknowledge.maven</groupId>
         <artifactId>maven-dependency-sanity-plugin</artifactId>
-        <version>0.1</version>
+        <version>0.2</version>
         <executions>
           <execution>
             <goals>
@@ -63,12 +68,3 @@ or with configuration options:
           </execution>
         </executions>
       </plugin>
-
-
-Future
-------
-
- * Same version for related dependencies: avoid e.g.
-   spring-context:2.5.6 and spring-aop:2.0.8; all
-   org.springframework:spring-* should have the same version
- * ...
